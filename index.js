@@ -1,5 +1,6 @@
 var fs = require('fs')
 var vueCompiler = require('vue-template-compiler')
+var transpile = require('vue-template-es2015-compiler')
 var falafel = require('falafel')
 var rewriteCSS = require('./lib/style-rewriter.js')
 var genId = require('./lib/gen-id.js')
@@ -92,8 +93,7 @@ function compile (load, opts, vueOpts) {
           }
         }
       })
-
-      script = `var __renderFns__ = System.get(${JSON.stringify(templateModuleName)});` + script
+      script = `var __renderFns__ = ${compileTemplateAsModule(JSON.stringify(templateModuleName), sfc.template.content)}` + script
     }
     return script
   })
@@ -109,13 +109,7 @@ if (typeof window === 'undefined') {
     ).then(styles => {
       return `${cssInject}(${JSON.stringify(styles.join('\n'))});\n`
     })
-
-    var templateModules = loads
-      .filter(l => l.metadata.sfc.template)
-      .map(l => compileTemplateAsModule(l.name, l.metadata.sfc.template.content))
-      .join('\n')
-
-    return style.then(style => templateModules + '\n' + style)
+    return style.then(style => style)
   }
 }
 
@@ -135,12 +129,9 @@ function getTemplateModuleName (name) {
 function compileTemplateAsModule (name, template) {
   name = getTemplateModuleName(name)
   var fns = vueCompiler.compile(template)
-  return `System.set(${JSON.stringify(name)},System.newModule({\n` +
-    `render:${toFn(fns.render)},\n` +
-    `staticRenderFns:[${fns.staticRenderFns.map(toFn).join(',')}]\n` +
-  `}));`
+  return `{ render: ${toFn(fns.render)}, staticRenderFns: [${fns.staticRenderFns.map(toFn).join(',')}] }`
 }
 
 function toFn (code) {
-  return `function(){${code}}`
+  return transpile('function render () {' + code + '}')
 }

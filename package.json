@@ -27,6 +27,7 @@
     "lru-cache": "^4.0.1",
     "postcss": "^5.0.21",
     "postcss-selector-parser": "^2.1.0",
-    "vue-template-compiler": "^2.0.0-alpha.5"
+    "vue-template-compiler": "^2.0.0-alpha.8",
+    "vue-template-es2015-compiler": "^1.2.2"
   }
 }
